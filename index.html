@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Robux Cash Converter</title>
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap" rel="stylesheet" />
+  <style>
+    body {
+      background: #f0f4f8;
+      font-family: 'Poppins', sans-serif;
+      color: #1f2937;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 3rem 1rem;
+      min-height: 100vh;
+    }
+    h1 {
+      font-weight: 600;
+      font-size: 2.5rem;
+      margin-bottom: 1rem;
+    }
+    input, select, button {
+      font-size: 1.2rem;
+      padding: 0.75rem 1rem;
+      border-radius: 8px;
+      border: none;
+      margin: 0.5rem;
+      outline: none;
+      box-shadow: 0 2px 6px rgba(59, 130, 246, 0.2);
+      transition: box-shadow 0.3s ease;
+    }
+    input:focus, select:focus, button:focus {
+      box-shadow: 0 4px 12px rgba(59, 130, 246, 0.4);
+    }
+    button {
+      background-color: #3b82f6;
+      color: white;
+      font-weight: 600;
+      cursor: pointer;
+      user-select: none;
+      transition: background-color 0.3s ease;
+    }
+    button:hover {
+      background-color: #2563eb;
+    }
+    #result {
+      margin-top: 2rem;
+      font-size: 1.8rem;
+      font-weight: 600;
+      color: #10b981;
+      min-height: 2.5rem;
+      opacity: 0;
+      transform: translateY(10px);
+      animation-fill-mode: forwards;
+    }
+    .result-animate {
+      animation: countUp 0.5s ease-out forwards;
+      opacity: 1 !important;
+      transform: translateY(0) !important;
+    }
+    @keyframes countUp {
+      0% { opacity: 0; transform: translateY(10px); }
+      100% { opacity: 1; transform: translateY(0); }
+    }
+    @media (max-width: 600px) {
+      h1 {
+        font-size: 1.8rem;
+      }
+      input, select, button {
+        font-size: 1rem;
+        padding: 0.6rem 0.8rem;
+        margin: 0.3rem;
+      }
+      #result {
+        font-size: 1.4rem;
+      }
+    }
+  </style>
+</head>
+<body>
+  <h1>💰 Robux Cash Converter</h1>
+  <input id="robuxInput" type="number" placeholder="Robuxを入力" min="0" />
+  <select id="currencySelector">
+    <option value="USD">🇺🇸 米ドル (USD)</option>
+    <option value="JPY" selected>🇯🇵 日本円 (JPY)</option>
+    <option value="EUR">🇪🇺 ユーロ (EUR)</option>
+  </select>
+  <button id="convertBtn">換算！</button>
+  <div id="result"></div>
+
+  <script>
+    const robuxInput = document.getElementById('robuxInput');
+    const currencySelector = document.getElementById('currencySelector');
+    const convertBtn = document.getElementById('convertBtn');
+    const result = document.getElementById('result');
+
+    convertBtn.addEventListener('click', async () => {
+      const robux = parseFloat(robuxInput.value);
+      const currency = currencySelector.value;
+
+      if (isNaN(robux) || robux < 0) {
+        result.textContent = '正しいRobux数を入力してください';
+        result.classList.remove('result-animate');
+        return;
+      }
+
+      // 為替APIからレート取得
+      try {
+        const response = await fetch('https://api.frankfurter.app/latest?from=USD&to=JPY,EUR');
+        const data = await response.json();
+
+        const robuxToUSD = 0.0035;
+        const exchangeRates = {
+          USD: 1,
+          JPY: data.rates.JPY,
+          EUR: data.rates.EUR,
+        };
+
+        const convertedValue = robux * robuxToUSD * exchangeRates[currency];
+        const currencySymbols = { USD: '$', JPY: '¥', EUR: '€' };
+        const isEligible = robux >= 100000;
+        const devExText = isEligible ? '（DevEx対象）' : '（DevEx条件未達）';
+
+        result.textContent = `約 ${currencySymbols[currency]}${Math.floor(convertedValue).toLocaleString()} ${devExText}`;
+        result.classList.remove('result-animate');
+        void result.offsetWidth; // 再トリガーのためのトリック
+        result.classList.add('result-animate');
+      } catch {
+        result.textContent = '為替データの取得に失敗しました';
+        result.classList.remove('result-animate');
+      }
+    });
+  </script>
+</body>
+</html>
